@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Senza Assistive Touch</string>
+    <string name="service_desc">Menghadirkan tombol melayang ala AssistiveTouch iPhone: Home, Kembali, Recents, Notifikasi, Pusat Kontrol, Screenshot, volume, kunci layar, dan lainnya.</string>
+</resources>
