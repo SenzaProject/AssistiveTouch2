@@ -3,7 +3,7 @@
 Tombol melayang ala AssistiveTouch iPhone, berbasis AccessibilityService.
 
 ## Fitur
-- UI liquid glass: tombol, menu, pengaturan, dan ikon (blur latar nyata di Android 12+)
+- UI liquid glass gelap: panel kaca berasap, tombol gelembung kaca, rim ganda terang (blur latar nyata di Android 12+)
 - Tombol melayang bisa digeser, menempel ke tepi layar, memudar saat diam
 - Menu 3x3: Notifikasi, Pusat Kontrol, Asisten, Perangkat, Home, Screenshot, Kembali, Aplikasi terbaru, Kunci layar
 - Submenu Perangkat: Volume +/-, Bisukan, Kunci layar, Screenshot, Menu daya

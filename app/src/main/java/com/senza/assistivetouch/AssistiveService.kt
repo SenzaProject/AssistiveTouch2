@@ -238,30 +238,32 @@ class AssistiveService : AccessibilityService() {
         val blurOn = Build.VERSION.SDK_INT >= 31 && blur > 0 && wm.isCrossWindowBlurEnabled
 
         val shadow = dp(22)
-        val pad = dp(16) + shadow
-        val cell = dp(88)
+        val pad = dp(14) + shadow
+        val cellW = minOf(dp(100), (screenW() - 2 * pad - dp(8)) / 3)
+        val cellH = dp(108)
 
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(pad, pad, pad, pad)
-            background = GlassDrawable(
-                d, dp(38).toFloat(), glass, if (blurOn) 0.14f else 0.32f, shadow.toFloat()
+            background = DarkGlassPanelDrawable(
+                d, dp(46).toFloat(), shadow.toFloat(),
+                (0.30f + 0.20f * glass / 100f) * (if (blurOn) 0.9f else 1.15f)
             )
         }
 
         items.chunked(3).forEach { rowItems ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             rowItems.forEach { item ->
-                row.addView(buildCell(item, glass), LinearLayout.LayoutParams(cell, cell))
+                row.addView(buildCell(item), LinearLayout.LayoutParams(cellW, cellH))
             }
             repeat(3 - rowItems.size) {
-                row.addView(View(this), LinearLayout.LayoutParams(cell, cell))
+                row.addView(View(this), LinearLayout.LayoutParams(cellW, cellH))
             }
             panel.addView(row)
         }
 
         val root = FrameLayout(this)
-        root.setBackgroundColor(Color.parseColor(if (blurOn) "#22000000" else "#55000000"))
+        root.setBackgroundColor(Color.parseColor(if (blurOn) "#33000000" else "#66000000"))
         root.setOnClickListener { dismissMenu() }
         root.addView(panel, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -344,7 +346,7 @@ class AssistiveService : AccessibilityService() {
         }
     }
 
-    private fun buildCell(item: Item, glass: Int): View {
+    private fun buildCell(item: Item): View {
         val d = resources.displayMetrics.density
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -353,21 +355,21 @@ class AssistiveService : AccessibilityService() {
             setOnTouchListener { v, e -> pressAnim(v, e, 0.9f); false }
         }
         val tile = FrameLayout(this).apply {
-            background = GlassDrawable(d, -1f, (glass + 20).coerceAtMost(100), 0.10f)
+            background = GlassBubbleDrawable(d)
         }
         tile.addView(
             ImageView(this).apply { setImageResource(item.icon) },
-            FrameLayout.LayoutParams(dp(26), dp(26), Gravity.CENTER)
+            FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER)
         )
-        box.addView(tile, LinearLayout.LayoutParams(dp(54), dp(54)))
+        box.addView(tile, LinearLayout.LayoutParams(dp(66), dp(66)))
         box.addView(TextView(this).apply {
             text = item.label
-            textSize = 11f
+            textSize = 13.5f
             gravity = Gravity.CENTER
             maxLines = 1
             setTextColor(Color.WHITE)
-            setShadowLayer(4f, 0f, 1f, Color.parseColor("#66000000"))
-            setPadding(0, dp(6), 0, 0)
+            setShadowLayer(5f, 0f, 1f, Color.parseColor("#99000000"))
+            setPadding(0, dp(4), 0, 0)
         })
         return box
     }
