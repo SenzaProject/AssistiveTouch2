@@ -234,20 +234,19 @@ class AssistiveService : AccessibilityService() {
 
         val d = resources.displayMetrics.density
         val glass = prefs.getInt(Actions.K_GLASS, 60)
-        val blur = prefs.getInt(Actions.K_BLUR, 60)
+        val blur = prefs.getInt(Actions.K_BLUR, 0)
         val blurOn = Build.VERSION.SDK_INT >= 31 && blur > 0 && wm.isCrossWindowBlurEnabled
 
-        val shadow = dp(22)
-        val pad = dp(14) + shadow
-        val cellW = minOf(dp(100), (screenW() - 2 * pad - dp(8)) / 3)
-        val cellH = dp(108)
+        val pad = dp(16)
+        val cellW = minOf(dp(87), (screenW() - 2 * pad - dp(8)) / 3)
+        val cellH = cellW
 
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(pad, pad, pad, pad)
             background = DarkGlassPanelDrawable(
-                d, dp(46).toFloat(), shadow.toFloat(),
-                (0.30f + 0.20f * glass / 100f) * (if (blurOn) 0.9f else 1.15f)
+                d, dp(44).toFloat(),
+                0.18f + 0.14f * glass / 100f
             )
         }
 
@@ -263,7 +262,7 @@ class AssistiveService : AccessibilityService() {
         }
 
         val root = FrameLayout(this)
-        root.setBackgroundColor(Color.parseColor(if (blurOn) "#33000000" else "#66000000"))
+        root.setBackgroundColor(Color.TRANSPARENT)
         root.setOnClickListener { dismissMenu() }
         root.addView(panel, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -350,7 +349,8 @@ class AssistiveService : AccessibilityService() {
         val d = resources.displayMetrics.density
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            setPadding(0, dp(2), 0, 0)
             setOnClickListener { item.onClick() }
             setOnTouchListener { v, e -> pressAnim(v, e, 0.9f); false }
         }
@@ -359,17 +359,16 @@ class AssistiveService : AccessibilityService() {
         }
         tile.addView(
             ImageView(this).apply { setImageResource(item.icon) },
-            FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER)
+            FrameLayout.LayoutParams(dp(26), dp(26), Gravity.CENTER)
         )
-        box.addView(tile, LinearLayout.LayoutParams(dp(66), dp(66)))
+        box.addView(tile, LinearLayout.LayoutParams(dp(56), dp(56)))
         box.addView(TextView(this).apply {
             text = item.label
-            textSize = 13.5f
+            textSize = 10.8f
             gravity = Gravity.CENTER
             maxLines = 1
             setTextColor(Color.WHITE)
-            setShadowLayer(5f, 0f, 1f, Color.parseColor("#99000000"))
-            setPadding(0, dp(4), 0, 0)
+                        setPadding(0, dp(5), 0, 0)
         })
         return box
     }

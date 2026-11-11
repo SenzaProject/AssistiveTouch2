@@ -142,134 +142,100 @@ fun pressAnim(v: View, e: MotionEvent, pressed: Float = 0.94f) {
 
 
 /**
- * Panel kaca gelap ala referensi: isi hitam berasap, kabut putih di kiri-atas,
- * rim ganda yang terang di sudut, kilau di atas, dan cahaya lembut di bawah.
- * shadowPx > 0 -> bayangan digambar DI DALAM bounds (beri padding sebesar ini).
+ * Panel kaca bening ala referensi: isi hampir transparan dengan tint tipis, kilau
+ * lembut di sudut kiri-atas & kanan-bawah, rim ganda (garis luar terang + garis dalam tipis).
+ * TANPA bayangan luar, jadi tidak ada halo di background putih/terang.
+ * Semua kilau di-clip ke bentuk panel sehingga tidak ada tepi keras.
  */
 class DarkGlassPanelDrawable(
     private val density: Float,
     private val radiusPx: Float,
-    private val shadowPx: Float,
-    private val tint: Float = 0.42f
+    private val tint: Float = 0.30f
 ) : Drawable() {
 
     private val under = Paint(Paint.ANTI_ALIAS_FLAG)
     private val haze = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val glowTL = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val glowBR = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val topSheen = Paint(Paint.ANTI_ALIAS_FLAG)
     private val outerRim = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val innerRim = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val innerGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val spec = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val bottom = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val shadow = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val rect = RectF()
     private val innerRect = RectF()
-    private val glowRect = RectF()
-    private val specRect = RectF()
-    private val bottomRect = RectF()
-    private val shape = Path()
+    private val clip = Path()
     private var r = 0f
     private var innerR = 0f
-    private var glowR = 0f
-    private var specR = 0f
-    private var bottomR = 0f
 
     private fun w(f: Float) = Color.argb((f.coerceIn(0f, 1f) * 255).toInt(), 255, 255, 255)
 
     override fun onBoundsChange(b: Rect) {
-        val rimW = 2.2f * density
-        val inW = 1.2f * density
-        val glowW = 7f * density
+        val rimW = 2.0f * density
+        val inW = 1.0f * density
         rect.set(b)
-        rect.inset(shadowPx + rimW / 2f, shadowPx + rimW / 2f)
+        rect.inset(rimW / 2f, rimW / 2f)
         val width = rect.width()
         val height = rect.height()
         if (width <= 0f || height <= 0f) return
         r = minOf(radiusPx, minOf(width, height) / 2f)
 
-        shape.reset()
-        shape.addRoundRect(rect, r, r, Path.Direction.CW)
+        clip.reset()
+        clip.addRoundRect(rect, r, r, Path.Direction.CW)
 
         under.color = Color.argb((tint * 255).toInt(), 0, 0, 0)
 
         haze.shader = LinearGradient(
             rect.left, rect.top, rect.right, rect.bottom,
-            intArrayOf(w(0.20f), w(0.03f), w(0.01f), w(0.08f)),
+            intArrayOf(w(0.10f), w(0.015f), w(0.01f), w(0.05f)),
             floatArrayOf(0f, 0.35f, 0.7f, 1f), Shader.TileMode.CLAMP
+        )
+
+        // kilau lembut radial (tidak punya tepi keras)
+        val gr = maxOf(width, height) * 0.55f
+        glowTL.shader = RadialGradient(
+            rect.left + width * 0.08f, rect.top + height * 0.04f, gr,
+            intArrayOf(w(0.22f), w(0.07f), w(0f)),
+            floatArrayOf(0f, 0.45f, 1f), Shader.TileMode.CLAMP
+        )
+        glowBR.shader = RadialGradient(
+            rect.right - width * 0.06f, rect.bottom - height * 0.02f, gr * 0.75f,
+            intArrayOf(w(0.14f), w(0.04f), w(0f)),
+            floatArrayOf(0f, 0.5f, 1f), Shader.TileMode.CLAMP
+        )
+        topSheen.shader = LinearGradient(
+            0f, rect.top, 0f, rect.top + height * 0.16f,
+            w(0.10f), w(0f), Shader.TileMode.CLAMP
         )
 
         outerRim.strokeWidth = rimW
         outerRim.shader = LinearGradient(
             rect.left, rect.top, rect.right, rect.bottom,
-            intArrayOf(w(0.95f), w(0.22f), w(0.18f), w(0.90f)),
-            floatArrayOf(0f, 0.36f, 0.64f, 1f), Shader.TileMode.CLAMP
+            intArrayOf(w(0.95f), w(0.30f), w(0.26f), w(0.92f)),
+            floatArrayOf(0f, 0.34f, 0.66f, 1f), Shader.TileMode.CLAMP
         )
 
-        val gap = 3.2f * density
+        val gap = 3.0f * density
         innerRect.set(rect)
         innerRect.inset(gap, gap)
         innerR = (r - gap).coerceAtLeast(0f)
         innerRim.strokeWidth = inW
         innerRim.shader = LinearGradient(
-            innerRect.left, innerRect.bottom, innerRect.right, innerRect.top,
-            intArrayOf(w(0.55f), w(0.06f), w(0.05f), w(0.45f)),
-            floatArrayOf(0f, 0.4f, 0.6f, 1f), Shader.TileMode.CLAMP
-        )
-
-        glowRect.set(rect)
-        glowRect.inset(glowW / 2f + rimW / 2f, glowW / 2f + rimW / 2f)
-        glowR = (r - glowW / 2f - rimW / 2f).coerceAtLeast(0f)
-        innerGlow.strokeWidth = glowW
-        innerGlow.shader = LinearGradient(
-            rect.left, rect.top, rect.right, rect.bottom,
-            intArrayOf(w(0.14f), w(0.02f), w(0.02f), w(0.12f)),
-            floatArrayOf(0f, 0.4f, 0.6f, 1f), Shader.TileMode.CLAMP
-        )
-
-        specRect.set(
-            rect.left + width * 0.06f, rect.top + 3f * density,
-            rect.right - width * 0.30f, rect.top + height * 0.30f
-        )
-        specR = (r * 0.8f).coerceAtMost(specRect.height() / 2f + 4f * density)
-        spec.shader = LinearGradient(
-            0f, specRect.top, 0f, specRect.bottom,
-            w(0.26f), w(0f), Shader.TileMode.CLAMP
-        )
-
-        bottomRect.set(
-            rect.left + width * 0.08f, rect.bottom - height * 0.22f,
-            rect.right - width * 0.08f, rect.bottom - 3f * density
-        )
-        bottomR = (r * 0.8f).coerceAtMost(bottomRect.height() / 2f + 4f * density)
-        bottom.shader = LinearGradient(
-            0f, bottomRect.top, 0f, bottomRect.bottom,
-            w(0f), w(0.16f), Shader.TileMode.CLAMP
+            innerRect.left, innerRect.top, innerRect.right, innerRect.bottom,
+            intArrayOf(w(0.55f), w(0.05f), w(0.04f), w(0.50f)),
+            floatArrayOf(0f, 0.38f, 0.62f, 1f), Shader.TileMode.CLAMP
         )
     }
 
     override fun draw(c: Canvas) {
         if (rect.width() <= 0f) return
-
-        if (shadowPx > 0f) {
-            c.save()
-            c.clipOutPath(shape)
-            val offY = shadowPx * 0.35f
-            for (i in 1..7) {
-                val e = shadowPx * i / 7f
-                shadow.color = Color.argb(16, 0, 0, 0)
-                c.drawRoundRect(
-                    rect.left - e, rect.top - e + offY, rect.right + e, rect.bottom + e + offY,
-                    r + e, r + e, shadow
-                )
-            }
-            c.restore()
-        }
-
-        c.drawRoundRect(rect, r, r, under)
-        c.drawRoundRect(rect, r, r, haze)
-        c.drawRoundRect(glowRect, glowR, glowR, innerGlow)
-        c.drawRoundRect(bottomRect, bottomR, bottomR, bottom)
-        c.drawRoundRect(specRect, specR, specR, spec)
+        c.save()
+        c.clipPath(clip)
+        c.drawRect(rect, under)
+        c.drawRect(rect, haze)
+        c.drawRect(rect, glowTL)
+        c.drawRect(rect, glowBR)
+        c.drawRect(rect, topSheen)
+        c.restore()
         c.drawRoundRect(innerRect, innerR, innerR, innerRim)
         c.drawRoundRect(rect, r, r, outerRim)
     }
@@ -292,8 +258,6 @@ class GlassBubbleDrawable(private val density: Float) : Drawable() {
     private val innerRim = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val top = Paint(Paint.ANTI_ALIAS_FLAG)
     private val bottom = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val shadow = Paint(Paint.ANTI_ALIAS_FLAG)
-
     private val rect = RectF()
     private val innerRect = RectF()
     private val topRect = RectF()
@@ -307,14 +271,14 @@ class GlassBubbleDrawable(private val density: Float) : Drawable() {
     override fun onBoundsChange(b: Rect) {
         val rimW = 1.8f * density
         val inW = 1f * density
-        val pad = 3f * density
+        val pad = 1.5f * density
         rect.set(b)
         rect.inset(pad + rimW / 2f, pad + rimW / 2f)
         val d = minOf(rect.width(), rect.height())
         if (d <= 0f) return
         cx = rect.centerX(); cy = rect.centerY(); radius = d / 2f
 
-        under.color = Color.argb(70, 0, 0, 0)
+        under.color = Color.argb(46, 0, 0, 0)
 
         body.shader = RadialGradient(
             cx, cy - radius * 0.1f, radius,
@@ -360,12 +324,6 @@ class GlassBubbleDrawable(private val density: Float) : Drawable() {
 
     override fun draw(c: Canvas) {
         if (radius <= 0f) return
-        val sh = 3f * density
-        for (i in 1..4) {
-            val e = sh * i / 4f
-            shadow.color = Color.argb(18, 0, 0, 0)
-            c.drawCircle(cx, cy + sh * 0.7f, radius + e, shadow)
-        }
         c.drawCircle(cx, cy, radius, under)
         c.drawCircle(cx, cy, radius, body)
         c.drawCircle(cx, cy, radius - 3f * density, innerRim)

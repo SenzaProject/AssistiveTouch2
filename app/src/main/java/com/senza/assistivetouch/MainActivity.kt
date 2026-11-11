@@ -112,7 +112,7 @@ class MainActivity : Activity() {
         val c2 = card("TAMPILAN", root)
         slider(c2, "Ukuran tombol", Actions.K_SIZE, 54, 36, 90)
         slider(c2, "Transparansi saat diam", Actions.K_OPACITY, 60, 20, 100)
-        slider(c2, "Tingkat blur", Actions.K_BLUR, 60, 0, 100)
+        slider(c2, "Tingkat blur", Actions.K_BLUR, 0, 0, 100)
         slider(c2, "Efek glass", Actions.K_GLASS, 60, 0, 100)
 
         // --- Gestur
